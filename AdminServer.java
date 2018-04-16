@@ -35,7 +35,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Starting the server
     public static String serverStart() throws RemoteException {
         Project proj = new AdminServer();
-        Registry reg = LocateRegistry.createRegistry(2310);
+        Registry reg = LocateRegistry.createRegistry(3000);
         reg.rebind("groupFive", proj);
         return "Server connection established";
     }
@@ -172,6 +172,16 @@ public class AdminServer extends UnicastRemoteObject implements Project {
                         case 3:
                             deleteUser();
                             break;
+                        case 4:
+                            break;
+                        case 5:
+                            break;
+                        case 6:
+                            break;
+                        case 7:
+                            break;
+                        case 8:
+                            System.exit(0);
                         default:
                             System.out.println("Your choice didnt match to menu !");
                     }
