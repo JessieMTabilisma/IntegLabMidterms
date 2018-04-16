@@ -1,10 +1,10 @@
 CREATE DATABASE  IF NOT EXISTS `rmi_project` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `rmi_project`;
--- MySQL dump 10.13  Distrib 5.7.17, for macos10.12 (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
 --
 -- Host: localhost    Database: rmi_project
 -- ------------------------------------------------------
--- Server version	5.6.35
+-- Server version	5.7.14
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -26,14 +26,14 @@ DROP TABLE IF EXISTS `files`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `files` (
   `file_id` int(11) NOT NULL AUTO_INCREMENT,
-  `file` blob NOT NULL,
-  `user` varchar(45) NOT NULL,
-  `p_id` int(11) NOT NULL,
+  `file_type` blob NOT NULL,
+  `user_name` varchar(45) NOT NULL,
+  `proj_id` int(11) NOT NULL,
   PRIMARY KEY (`file_id`),
-  KEY `user_idx` (`user`),
-  KEY `p_id_idx` (`p_id`),
-  CONSTRAINT `p_id` FOREIGN KEY (`p_id`) REFERENCES `project_members` (`project_id`) ON DELETE CASCADE,
-  CONSTRAINT `user` FOREIGN KEY (`user`) REFERENCES `project_members` (`username`) ON UPDATE CASCADE
+  KEY `user_name_idx` (`user_name`),
+  KEY `proj_id_idx` (`proj_id`),
+  CONSTRAINT `proj_id` FOREIGN KEY (`proj_id`) REFERENCES `project_users` (`project_id`) ON DELETE CASCADE,
+  CONSTRAINT `user_name` FOREIGN KEY (`user_name`) REFERENCES `project_users` (`user_name`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -47,29 +47,56 @@ LOCK TABLES `files` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `project_members`
+-- Table structure for table `message`
 --
 
-DROP TABLE IF EXISTS `project_members`;
+DROP TABLE IF EXISTS `message`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `project_members` (
+CREATE TABLE `message` (
+  `message_id` int(11) NOT NULL AUTO_INCREMENT,
+  `message_status` varchar(45) NOT NULL DEFAULT 'seen',
   `username` varchar(45) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  PRIMARY KEY (`username`,`project_id`),
-  KEY `project_id_idx` (`project_id`),
-  CONSTRAINT `project_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`proj_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `username` FOREIGN KEY (`username`) REFERENCES `users` (`username`) ON UPDATE CASCADE
+  `projects_id` int(11) NOT NULL,
+  PRIMARY KEY (`message_id`),
+  KEY `username_idx` (`username`),
+  KEY `projects_id_idx` (`projects_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `project_members`
+-- Dumping data for table `message`
 --
 
-LOCK TABLES `project_members` WRITE;
-/*!40000 ALTER TABLE `project_members` DISABLE KEYS */;
-/*!40000 ALTER TABLE `project_members` ENABLE KEYS */;
+LOCK TABLES `message` WRITE;
+/*!40000 ALTER TABLE `message` DISABLE KEYS */;
+/*!40000 ALTER TABLE `message` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `project_users`
+--
+
+DROP TABLE IF EXISTS `project_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `project_users` (
+  `user_name` varchar(45) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_name`,`project_id`),
+  KEY `project_id_idx` (`project_id`),
+  CONSTRAINT `projects_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`projects_id`) ON UPDATE CASCADE,
+  CONSTRAINT `username` FOREIGN KEY (`user_name`) REFERENCES `users` (`username`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `project_users`
+--
+
+LOCK TABLES `project_users` WRITE;
+/*!40000 ALTER TABLE `project_users` DISABLE KEYS */;
+/*!40000 ALTER TABLE `project_users` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -80,11 +107,11 @@ DROP TABLE IF EXISTS `projects`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `projects` (
-  `proj_id` int(11) NOT NULL AUTO_INCREMENT,
-  `project_name` varchar(45) NOT NULL,
+  `projects_id` int(11) NOT NULL AUTO_INCREMENT,
+  `projects_name` varchar(45) NOT NULL,
   `status` varchar(45) NOT NULL DEFAULT 'on-going',
   `leader` varchar(45) NOT NULL,
-  PRIMARY KEY (`proj_id`)
+  PRIMARY KEY (`projects_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -98,6 +125,33 @@ LOCK TABLES `projects` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `userlog`
+--
+
+DROP TABLE IF EXISTS `userlog`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `userlog` (
+  `log_id` int(11) NOT NULL AUTO_INCREMENT,
+  `time` time(6) NOT NULL,
+  `date` date NOT NULL,
+  `username` varchar(45) NOT NULL,
+  PRIMARY KEY (`log_id`),
+  KEY `username_idx` (`username`),
+  CONSTRAINT `usersname` FOREIGN KEY (`username`) REFERENCES `users` (`username`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `userlog`
+--
+
+LOCK TABLES `userlog` WRITE;
+/*!40000 ALTER TABLE `userlog` DISABLE KEYS */;
+/*!40000 ALTER TABLE `userlog` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
@@ -106,8 +160,8 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
   `username` varchar(45) NOT NULL,
-  `first_name` varchar(45) NOT NULL,
-  `last_name` varchar(45) NOT NULL,
+  `f_name` varchar(45) NOT NULL,
+  `l_name` varchar(45) NOT NULL,
   `password` varchar(45) NOT NULL,
   `status` varchar(45) NOT NULL DEFAULT 'active',
   PRIMARY KEY (`username`),
@@ -123,10 +177,6 @@ LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping routines for database 'rmi_project'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -137,4 +187,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-12 22:39:52
+-- Dump completed on 2018-04-16 21:03:09
