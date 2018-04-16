@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package integlab.IntegLabMidterms;
 
 /**
@@ -21,6 +17,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.io.InputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 public class AdminServer extends UnicastRemoteObject implements Project {
     
@@ -28,6 +29,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     private Registry registry;
     private static Scanner usrInput = new Scanner(System.in);
     private static Connection connect;
+    private static PreparedStatement stmt;
     
     public AdminServer() throws RemoteException {
      super();   
@@ -53,7 +55,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    login module
     public static boolean loginModule(String usrname, String pswd) throws SQLException{
         String query = "SELECT username, password FROM users WHERE username = ? AND password = ?";
-        PreparedStatement stmt = connect.prepareStatement(query);
+        stmt = connect.prepareStatement(query);
         stmt.setString(1, usrname);
         stmt.setString(2, pswd);
         
@@ -98,7 +100,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String pswd = usrInput.nextLine();
         
         String query = "INSERT INTO users(username, first_name, last_name, password) VALUES(?,?,?,?)";
-        try (PreparedStatement stmt = connect.prepareStatement(query)) {
+            stmt = connect.prepareStatement(query);
             stmt.setString(1, usrname);
             stmt.setString(2, fname);
             stmt.setString(3, lname);
@@ -112,8 +114,6 @@ public class AdminServer extends UnicastRemoteObject implements Project {
             }
             
             pressToContinue();
-        } catch(SQLException sqlex){
-        }
     }
 //    Remove user
     public static void deleteUser() throws SQLException {
@@ -122,7 +122,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String deleteUser = usrInput.nextLine();
         
         String deleteQuery = "DELETE FROM users WHERE username = ?";
-        PreparedStatement stmt = connect.prepareStatement(deleteQuery);
+        stmt = connect.prepareStatement(deleteQuery);
         stmt.setString(1, deleteUser);
         
         int optStatus = stmt.executeUpdate();
@@ -142,7 +142,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String usrname = usrInput.nextLine();
         
         String queryUpdateStatus = "UPDATE users SET status = ? WHERE username = ?";
-        PreparedStatement stmt = connect.prepareStatement(queryUpdateStatus);
+        stmt = connect.prepareStatement(queryUpdateStatus);
         stmt.setString(1, "inactive");
         stmt.setString(2, usrname);
         
@@ -165,7 +165,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String projLeadName = usrInput.nextLine();
         
         String addProjectQuery = "INSERT INTO projects(project_name, leader) VALUES(?,?)";
-        PreparedStatement stmt = connect.prepareStatement(addProjectQuery);
+        stmt = connect.prepareStatement(addProjectQuery);
         stmt.setString(1, projName);
         stmt.setString(2, projLeadName);
         
@@ -181,7 +181,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Display ongoing project/s
     public static void displayOnGoingProjects() throws SQLException {
         String disOnGoinProj  = "SELECT proj_id, project_name, leader FROM projects WHERE status = ?";
-        PreparedStatement stmt = connect.prepareStatement(disOnGoinProj);
+        stmt = connect.prepareStatement(disOnGoinProj);
         stmt.setString(1, "on-going");
         ResultSet rs = stmt.executeQuery();
         System.out.println("--------------------------------------------");
@@ -200,11 +200,11 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Dsiplay completed project/s
     public static void displayCompletedProjects() throws SQLException {
         String disComProj  = "SELECT proj_id, project_name, leader FROM projects WHERE status = ?";
-        PreparedStatement stmt = connect.prepareStatement(disComProj);
+        stmt = connect.prepareStatement(disComProj);
         stmt.setString(1, "completed");
         ResultSet rs = stmt.executeQuery();
         System.out.println("--------------------------------------------");
-        System.out.println("On-going project/s");
+        System.out.println("Completed project/s");
         System.out.println("--------------------------------------------");
         System.out.printf("%-5s%-20s%-20s%n", "ID", "Project Name", "Project Leader");
         while(rs.next()){
@@ -278,12 +278,117 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     }
 
     @Override
-    public boolean loginUser(String usrname, String pswd) throws RemoteException, SQLException {
-        String queryUser = "SELECT username, passwordd FROM users WHERE username = ? AND password =?";
-        PreparedStatement stmt = connect.prepareStatement(queryUser);
+    public boolean userLogin(String usrname, String pswd) throws RemoteException, SQLException {
+        String queryUser = "SELECT username, password FROM users WHERE username = ? AND password =?";
+        stmt = connect.prepareStatement(queryUser);
         stmt.setString(1, usrname);
         stmt.setString(2, pswd);
         ResultSet rs = stmt.executeQuery();
         return rs.next();
+    }
+    @Override
+    public ArrayList displayAllProjects() throws RemoteException, SQLException {
+        String displayAllProj = "SELECT project_name FROM projects";
+        stmt = connect.prepareStatement(displayAllProj);
+        ResultSet result = stmt.executeQuery();
+        ArrayList<String> projects = new ArrayList<>();
+        while(result.next()) {
+            String project = result.getString("project_name");
+            projects.add(project);
+        }
+        return projects;
+    }
+    @Override
+    public boolean userType(String usrname, String projName) throws RemoteException, SQLException {
+        String validateQuery = "SELECT project_name FROM projects WHERE leader = ? AND project_name = ?";
+        stmt = connect.prepareStatement(validateQuery);
+        stmt.setString(1, usrname);
+        stmt.setString(2, projName);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? true : false;
+    }
+    @Override
+    public ArrayList displayProjLead(String usrname) throws RemoteException, SQLException {
+        String projLeadQuery = "SELECT project_name FROM projects WHERE leader = ?";
+        stmt = connect.prepareStatement(projLeadQuery);
+        stmt.setString(1, usrname);
+        ResultSet result = stmt.executeQuery();
+        ArrayList<String> projects = new ArrayList<>();
+        while(result.next()) {
+            String pName = result.getString("project_name");
+            projects.add(pName);
+        }
+        return projects;
+    }
+    @Override
+    public ArrayList displayProject(String usrname) throws RemoteException, SQLException {
+        String query = "SELECT project_name FROM projects JOIN project_members ON projects.proj_id = project_members.project_id JOIN users ON users.username = project_members.username WHERE users.username = ?";
+        stmt = connect.prepareStatement(query);
+        stmt.setString(1, usrname);
+        ResultSet result = stmt.executeQuery();
+        ArrayList<String> projects = new ArrayList<>();
+        while(result.next()) {
+            String p = result.getString("project_name");
+            projects.add(p);
+        }
+        return projects;
+    }
+    @Override
+    public int getProjectID(String project) throws RemoteException, SQLException {
+        String query = "SELECT proj_id FROM projects WHERE project_name = ?";
+        stmt = connect.prepareStatement(query);
+        stmt.setString(1, project);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? rs.getInt("proj_id") : -1;
+    }
+    @Override
+    public String addMember(String usrname, int project_id) throws RemoteException, SQLException {
+        String insertMember = "INSERT INTO project_members(username, project_id) VALUES(?,?)";
+        PreparedStatement stmtToo = connect.prepareStatement(insertMember);
+        stmtToo.setString(1, usrname);
+        stmtToo.setInt(2, project_id);
+        int memberAdded = stmtToo.executeUpdate();
+        return memberAdded > 0 ? "Member succesfully added" : "Member failed to add";
+    }
+    @Override
+    public String removeMember(String username, int project_id) throws RemoteException, SQLException {
+        String sql = "DELETE FROM project_members WHERE username = ? AND project_id = ?";
+        stmt = connect.prepareStatement(sql);
+        stmt.setString(1, username);
+        stmt.setInt(2, project_id);     
+        int memberDeleted = stmt.executeUpdate();
+        return memberDeleted > 0 ? "Member successfully removed from this project!" : "Failed to removed";
+    }
+    @Override
+    public String completedProject(int projID) throws RemoteException, SQLException {
+        String sql = "UPDATE projects SET status = ? WHERE proj_id = ?";
+        stmt = connect.prepareStatement(sql);
+        stmt.setString(1, "completed");
+        stmt.setInt(2, projID);
+        int rowUpdated = stmt.executeUpdate();
+        return rowUpdated > 0 ? "Project completed" : "Project still in progress";
+    }
+    public String uploadFile(String file, String usrname, int proID) throws RemoteException, SQLException, FileNotFoundException {
+        String sql = "INSERT into files(file, user, p_id) VALUES(?,?,?)";
+        stmt = connect.prepareStatement(sql);
+        InputStream in = new FileInputStream(new File(file));
+        stmt.setBlob(1, in);
+        stmt.setString(2, usrname);
+        stmt.setInt(3, proID);
+        int addedFile = stmt.executeUpdate();
+        return addedFile > 0 ? "File uploaded succesfully" : "Upload failed";
+    }
+    public ArrayList viewUserProjects(String username) throws RemoteException, SQLException {
+        String query = "SELECT project_name FROM projects JOIN project_members ON projects.proj_id = project_members.project_id JOIN users ON users.username = project_members.username WHERE users.username = ? AND projects.status = ?";
+        stmt = connect.prepareStatement(query);
+        stmt.setString(1, username);
+        stmt.setString(2, "on-going");
+        ResultSet result = stmt.executeQuery();
+        ArrayList<String> projects = new ArrayList<>();
+        while(result.next()) {
+            String p = result.getString("project_name");
+            projects.add(p);
+        }
+        return projects;
     }
 }
