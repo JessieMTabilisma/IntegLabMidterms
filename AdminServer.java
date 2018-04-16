@@ -67,7 +67,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String DB_Url = "jdbc:mysql://localhost:"+port+"/rmi_project?user="+usr+"&password="+pass;
         connect = DriverManager.getConnection(DB_Url);
         System.out.println("Database connection successfully established");
-        System.out.println("Press ⏎ to continue");
+        System.out.println("Press ENTER to continue");
         usrInput.nextLine();
         System.out.println("");
     }
@@ -96,7 +96,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
                 System.out.println("Registration failed!");
             }
             
-            System.out.println("Press ⏎ to continue");
+            System.out.println("Press ENTER to continue");
             usrInput.nextLine();
         } catch(SQLException sqlex){
         }
