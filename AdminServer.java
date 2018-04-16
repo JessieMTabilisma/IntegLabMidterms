@@ -35,7 +35,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Starting the server
     public static String serverStart() throws RemoteException {
         Project proj = new AdminServer();
-        Registry reg = LocateRegistry.createRegistry(3000);
+        Registry reg = LocateRegistry.createRegistry(3003);
         reg.rebind("groupFive", proj);
         return "Server connection established";
     }
@@ -78,9 +78,9 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     }
 //    Title
     public static void titleized(String title) {
-        System.out.println("=====================");
-        System.out.println("\t" + title);
-        System.out.println("=====================");
+        System.out.println("======================");
+        System.out.println(title);
+        System.out.println("======================");
     }
     public static void pressToContinue(){
         System.out.println("Press ENTER to continue");
@@ -127,13 +127,93 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         
         int optStatus = stmt.executeUpdate();
         if(optStatus > 0){
-            System.out.println("Succesfully deleted");
+            System.out.println("User " +deleteUser+ "succesfully deleted");
         } else{
             System.out.println("Username didnt match to the database");
         }
         stmt.close();
         pressToContinue();
         
+    }
+//    Update user status 
+    public static void updateUserStatus() throws SQLException {
+        titleized("Update user status");
+        System.out.println("Enter username that you want to update the status: ");
+        String usrname = usrInput.nextLine();
+        
+        String queryUpdateStatus = "UPDATE users SET status = ? WHERE username = ?";
+        PreparedStatement stmt = connect.prepareStatement(queryUpdateStatus);
+        stmt.setString(1, "inactive");
+        stmt.setString(2, usrname);
+        
+        int optUpdate = stmt.executeUpdate();
+        if(optUpdate > 0){
+            System.out.println(usrname + " successfully update");
+        } else { 
+            System.out.println(usrname + " didnt match to record");
+        }
+        stmt.close();
+        pressToContinue();
+        
+    }
+//    Create/ Add project
+    public static void createProject() throws SQLException {
+        titleized("Create a project");
+        System.out.println("Enter project name: ");
+        String projName = usrInput.nextLine();
+        System.out.println("Enter project leader username: ");
+        String projLeadName = usrInput.nextLine();
+        
+        String addProjectQuery = "INSERT INTO projects(project_name, leader) VALUES(?,?)";
+        PreparedStatement stmt = connect.prepareStatement(addProjectQuery);
+        stmt.setString(1, projName);
+        stmt.setString(2, projLeadName);
+        
+        int optCreate = stmt.executeUpdate();
+        if(optCreate  > 0){
+            System.out.println(projName + " succesfully added");
+        } else{
+            System.out.println("Fail to create project");
+        }
+        stmt.close();
+        pressToContinue();
+    }
+//    Display ongoing project/s
+    public static void displayOnGoingProjects() throws SQLException {
+        String disOnGoinProj  = "SELECT proj_id, project_name, leader FROM projects WHERE status = ?";
+        PreparedStatement stmt = connect.prepareStatement(disOnGoinProj);
+        stmt.setString(1, "on-going");
+        ResultSet rs = stmt.executeQuery();
+        System.out.println("--------------------------------------------");
+        System.out.println("On-going project/s");
+        System.out.println("--------------------------------------------");
+        System.out.printf("%-5s%-20s%-20s%n", "ID", "Project Name", "Project Leader");
+        while(rs.next()){
+            int projectID = rs.getInt("proj_id");
+            String projectName = rs.getString("project_name");
+            String projectLeader = rs.getString("leader");
+            
+           System.out.printf("%-5d%-20s%-20s%n", projectID, projectName, projectLeader);
+        }
+        
+    }
+//    Dsiplay completed project/s
+    public static void displayCompletedProjects() throws SQLException {
+        String disComProj  = "SELECT proj_id, project_name, leader FROM projects WHERE status = ?";
+        PreparedStatement stmt = connect.prepareStatement(disComProj);
+        stmt.setString(1, "completed");
+        ResultSet rs = stmt.executeQuery();
+        System.out.println("--------------------------------------------");
+        System.out.println("On-going project/s");
+        System.out.println("--------------------------------------------");
+        System.out.printf("%-5s%-20s%-20s%n", "ID", "Project Name", "Project Leader");
+        while(rs.next()){
+            int projectID = rs.getInt("proj_id");
+            String projectName = rs.getString("project_name");
+            String projectLeader = rs.getString("leader");
+            
+            System.out.printf("%-5d%-20s%-20s%n", projectID, projectName, projectLeader);
+        }
     }
 //    main method
     public static void main(String[] args) throws RemoteException, SQLException{
@@ -145,15 +225,15 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         System.out.print("Enter mysql password: ");
         String pass = usrInput.nextLine();
         dbConnection(port, user, pass);
-            System.out.println("Enter username: ");
+            System.out.print("Enter username:  ");
             String usrname = usrInput.nextLine();
-            System.out.println("Enter password: ");
+            System.out.print("Enter password:  ");
             String pswd = usrInput.nextLine();
            
             boolean login =  loginModule(usrname, pswd);
             String displayName = usrname.toUpperCase();
             if(!login){
-                System.out.println("Your username and password didnt match !");
+                System.out.println("Your username or password didnt match !");
             } else{
                 System.out.println("Welcome " + displayName + " your in control");
                 int choice = 0;
@@ -173,12 +253,16 @@ public class AdminServer extends UnicastRemoteObject implements Project {
                             deleteUser();
                             break;
                         case 4:
+                            updateUserStatus();
                             break;
                         case 5:
+                            createProject();
                             break;
                         case 6:
+                            displayOnGoingProjects();
                             break;
                         case 7:
+                            displayCompletedProjects();
                             break;
                         case 8:
                             System.exit(0);
