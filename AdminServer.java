@@ -35,15 +35,12 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Starting the server
     public static String serverStart() throws RemoteException {
         Project proj = new AdminServer();
-        Registry reg = LocateRegistry.createRegistry(2099);
+        Registry reg = LocateRegistry.createRegistry(2310);
         reg.rebind("groupFive", proj);
         return "Server connection established";
     }
 //    menu
     public static void adminMenu() {
-        System.out.println("=======================");
-        System.out.println("\t Menu");
-        System.out.println("=======================\n");
         System.out.println("[1] Start the server.");
         System.out.println("[2] Register user.");
         System.out.println("[3] Remove user.");
@@ -55,7 +52,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     }
 //    login module
     public static boolean loginModule(String usrname, String pswd) throws SQLException{
-        String query = "SELECT usrname, pswd FROM users WHERE usrname = ? AND pswd = ?";
+        String query = "SELECT username, password FROM users WHERE username = ? AND password = ?";
         PreparedStatement stmt = connect.prepareStatement(query);
         stmt.setString(1, usrname);
         stmt.setString(2, pswd);
@@ -70,7 +67,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
             String connectionUrl = "jdbc:mysql://localhost:"+port+"/rmi_project?user="+user+"&password="+pass;
             connect = DriverManager.getConnection(connectionUrl);
             System.out.println("Connection successful!");
-            System.out.print("Press any key to continue...");
+            System.out.print("Press ENTER to continue...");
             usrInput.nextLine();
             System.out.println("");
         } catch (ClassNotFoundException cne) {
@@ -78,6 +75,16 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         } catch (SQLException sqle) {
             sqle.printStackTrace();
         }
+    }
+//    Title
+    public static void titleized(String title) {
+        System.out.println("=====================");
+        System.out.println("\t" + title);
+        System.out.println("=====================");
+    }
+    public static void pressToContinue(){
+        System.out.println("Press ENTER to continue");
+        usrInput.nextLine();
     }
 //    Redister a user
     public static void registerUser() throws SQLException{
@@ -90,7 +97,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         System.out.println("Enter password: ");
         String pswd = usrInput.nextLine();
         
-        String query = "INSERT INTO users(usrname, fname, lname, pswd) VALUES(?,?,?,?)";
+        String query = "INSERT INTO users(username, first_name, last_name, password) VALUES(?,?,?,?)";
         try (PreparedStatement stmt = connect.prepareStatement(query)) {
             stmt.setString(1, usrname);
             stmt.setString(2, fname);
@@ -104,10 +111,29 @@ public class AdminServer extends UnicastRemoteObject implements Project {
                 System.out.println("Registration failed!");
             }
             
-            System.out.println("Press ENTER to continue");
-            usrInput.nextLine();
+            pressToContinue();
         } catch(SQLException sqlex){
         }
+    }
+//    Remove user
+    public static void deleteUser() throws SQLException {
+        titleized("Remove user");
+        System.out.println("Enter username that you want to delete");
+        String deleteUser = usrInput.nextLine();
+        
+        String deleteQuery = "DELETE FROM users WHERE username = ?";
+        PreparedStatement stmt = connect.prepareStatement(deleteQuery);
+        stmt.setString(1, deleteUser);
+        
+        int optStatus = stmt.executeUpdate();
+        if(optStatus > 0){
+            System.out.println("Succesfully deleted");
+        } else{
+            System.out.println("Username didnt match to the database");
+        }
+        stmt.close();
+        pressToContinue();
+        
     }
 //    main method
     public static void main(String[] args) throws RemoteException, SQLException{
@@ -123,23 +149,29 @@ public class AdminServer extends UnicastRemoteObject implements Project {
             String usrname = usrInput.nextLine();
             System.out.println("Enter password: ");
             String pswd = usrInput.nextLine();
-            
+           
             boolean login =  loginModule(usrname, pswd);
             String displayName = usrname.toUpperCase();
             if(!login){
                 System.out.println("Your username and password didnt match !");
             } else{
-                System.out.println("\tWelcome " + displayName + " your in control");
+                System.out.println("Welcome " + displayName + " your in control");
                 int choice = 0;
                 do{
+                    titleized("Menu");
                     adminMenu();
                     System.out.println("Enter your choice: ");
                     choice = Integer.parseInt(usrInput.nextLine());
                     switch(choice) {
                         case 1:
-                            serverStart();
+                            System.out.println(serverStart());
+                            break;
                         case 2:
                             registerUser();
+                            break;
+                        case 3:
+                            deleteUser();
+                            break;
                         default:
                             System.out.println("Your choice didnt match to menu !");
                     }
@@ -153,7 +185,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 
     @Override
     public boolean loginUser(String usrname, String pswd) throws RemoteException, SQLException {
-        String queryUser = "SELECT usrname, pswd FROM users WHERE usrname = ? AND pswd =?";
+        String queryUser = "SELECT username, passwordd FROM users WHERE username = ? AND password =?";
         PreparedStatement stmt = connect.prepareStatement(queryUser);
         stmt.setString(1, usrname);
         stmt.setString(2, pswd);
