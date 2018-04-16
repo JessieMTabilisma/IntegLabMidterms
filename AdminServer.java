@@ -9,7 +9,6 @@ package integlab.IntegLabMidterms;
  *
  * @author jessietabilisma
  */
-import java.io.FileNotFoundException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -19,7 +18,7 @@ import java.util.Scanner;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
+import java.sql.ResultSet;
 
 public class AdminServer extends UnicastRemoteObject implements Project {
     
@@ -51,6 +50,16 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         System.out.println("[6] Display on goig project/s.");
         System.out.println("[7] Display completed project/s.");
         System.out.println("[8] Exit session.");
+    }
+//    login
+    public static boolean loginModule(String usrname, String pswd) throws SQLException{
+        String query = "SELECT usrname, pswd FROM users WHERE usrname = ? AND pswd = ?";
+        PreparedStatement stmt = connect.prepareStatement(query);
+        stmt.setString(1, usrname);
+        stmt.setString(2, pswd);
+        
+        ResultSet rs = stmt.executeQuery();
+        return rs.next();
     }
 //    connect database
     public static void dbConnection(String usr, String pass, String port) throws Exception{
@@ -91,5 +100,45 @@ public class AdminServer extends UnicastRemoteObject implements Project {
             usrInput.nextLine();
         } catch(SQLException sqlex){
         }
+    }
+//    main method
+    public static void main(String[] args) throws RemoteException, SQLException{
+        System.out.print("Enter mysql username: ");
+        String usr = usrInput.nextLine();
+        System.out.print("Enter mysql password: ");
+        String pass = usrInput.nextLine();
+        System.out.print("Enter mysql port: ");
+        String port = usrInput.nextLine();
+        try{
+            dbConnection(usr, pass, port);
+        } catch(Exception e){   
+        }
+        System.out.println("Enter username: ");
+        String usrname = usrInput.nextLine();
+        System.out.println("Enter password: ");
+        String pswd = usrInput.nextLine();
+        
+        boolean login =  loginModule(usrname, pswd);
+        String displayName = usrname.toUpperCase();
+        if(!login){
+            System.out.println("Your username and password didnt match !");
+        } else{
+            System.out.println("\tWelcome " + displayName + " your in control");
+            int choice = 0;
+            do{
+                adminMenu();
+                System.out.println("Enter your choice: ");
+                choice = Integer.parseInt(usrInput.nextLine());
+                switch(choice) {
+                    case 1:
+                        serverStart();
+                    case 2:
+                        registerUser();
+                    default:
+                        System.out.println("Your choice didnt match to menu !");
+                }
+            }while(choice != 8 && choice < 8);
+        }
+        
     }
 }
