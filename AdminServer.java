@@ -141,4 +141,14 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         }
         
     }
+
+    @Override
+    public boolean loginUser(String usrname, String pswd) throws RemoteException, SQLException {
+        String queryUser = "SELECT usrname, pswd FROM users WHERE usrname = ? AND pswd =?";
+        PreparedStatement stmt = connect.prepareStatement(queryUser);
+        stmt.setString(1, usrname);
+        stmt.setString(2, pswd);
+        ResultSet rs = stmt.executeQuery();
+        return rs.next() ? true : false;
+    }
 }
