@@ -19,12 +19,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AdminServer extends UnicastRemoteObject implements Project {
     
 //    fields
     private Registry registry;
-    private static Scanner usrInput;
+    private static Scanner usrInput = new Scanner(System.in);
     private static Connection connect;
     
     public AdminServer() throws RemoteException {
@@ -51,7 +53,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         System.out.println("[7] Display completed project/s.");
         System.out.println("[8] Exit session.");
     }
-//    login
+//    login module
     public static boolean loginModule(String usrname, String pswd) throws SQLException{
         String query = "SELECT usrname, pswd FROM users WHERE usrname = ? AND pswd = ?";
         PreparedStatement stmt = connect.prepareStatement(query);
@@ -62,14 +64,20 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         return rs.next();
     }
 //    connect database
-    public static void dbConnection(String usr, String pass, String port) throws Exception{
-        Class.forName("com.mysql.jdbc.Driver");
-        String DB_Url = "jdbc:mysql://localhost:"+port+"/rmi_project?user="+usr+"&password="+pass;
-        connect = DriverManager.getConnection(DB_Url);
-        System.out.println("Database connection successfully established");
-        System.out.println("Press ENTER to continue");
-        usrInput.nextLine();
-        System.out.println("");
+    public static void dbConnection(String port , String user, String pass) throws Exception{
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            String connectionUrl = "jdbc:mysql://localhost:"+port+"/rmi_project?user="+user+"&password="+pass;
+            connect = DriverManager.getConnection(connectionUrl);
+            System.out.println("Connection successful!");
+            System.out.print("Press any key to continue...");
+            usrInput.nextLine();
+            System.out.println("");
+        } catch (ClassNotFoundException cne) {
+            cne.printStackTrace();
+        } catch (SQLException sqle) {
+            sqle.printStackTrace();
+        }
     }
 //    Redister a user
     public static void registerUser() throws SQLException{
@@ -103,41 +111,42 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     }
 //    main method
     public static void main(String[] args) throws RemoteException, SQLException{
+        try {
+        System.out.print("Enter mysql port number: ");
+        String port = usrInput.nextLine();
         System.out.print("Enter mysql username: ");
-        String usr = usrInput.nextLine();
+        String user = usrInput.nextLine();
         System.out.print("Enter mysql password: ");
         String pass = usrInput.nextLine();
-        System.out.print("Enter mysql port: ");
-        String port = usrInput.nextLine();
-        try{
-            dbConnection(usr, pass, port);
-        } catch(Exception e){   
-        }
-        System.out.println("Enter username: ");
-        String usrname = usrInput.nextLine();
-        System.out.println("Enter password: ");
-        String pswd = usrInput.nextLine();
-        
-        boolean login =  loginModule(usrname, pswd);
-        String displayName = usrname.toUpperCase();
-        if(!login){
-            System.out.println("Your username and password didnt match !");
-        } else{
-            System.out.println("\tWelcome " + displayName + " your in control");
-            int choice = 0;
-            do{
-                adminMenu();
-                System.out.println("Enter your choice: ");
-                choice = Integer.parseInt(usrInput.nextLine());
-                switch(choice) {
-                    case 1:
-                        serverStart();
-                    case 2:
-                        registerUser();
-                    default:
-                        System.out.println("Your choice didnt match to menu !");
-                }
-            }while(choice != 8 && choice < 8);
+        dbConnection(port, user, pass);
+            System.out.println("Enter username: ");
+            String usrname = usrInput.nextLine();
+            System.out.println("Enter password: ");
+            String pswd = usrInput.nextLine();
+            
+            boolean login =  loginModule(usrname, pswd);
+            String displayName = usrname.toUpperCase();
+            if(!login){
+                System.out.println("Your username and password didnt match !");
+            } else{
+                System.out.println("\tWelcome " + displayName + " your in control");
+                int choice = 0;
+                do{
+                    adminMenu();
+                    System.out.println("Enter your choice: ");
+                    choice = Integer.parseInt(usrInput.nextLine());
+                    switch(choice) {
+                        case 1:
+                            serverStart();
+                        case 2:
+                            registerUser();
+                        default:
+                            System.out.println("Your choice didnt match to menu !");
+                    }
+                }while(choice != 8);
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(AdminServer.class.getName()).log(Level.SEVERE, null, ex);
         }
         
     }
@@ -149,6 +158,6 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         stmt.setString(1, usrname);
         stmt.setString(2, pswd);
         ResultSet rs = stmt.executeQuery();
-        return rs.next() ? true : false;
+        return rs.next();
     }
 }
