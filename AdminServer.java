@@ -37,7 +37,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
 //    Starting the server
     public static String serverStart() throws RemoteException {
         Project proj = new AdminServer();
-        Registry reg = LocateRegistry.createRegistry(3005);
+        Registry reg = LocateRegistry.createRegistry(3006);
         reg.rebind("groupFive", proj);
         return "Server connection established";
     }
@@ -286,6 +286,18 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         ResultSet rs = stmt.executeQuery();
         return rs.next();
     }
+    public boolean validateUserPrivileges(String username, String project_name) throws RemoteException, SQLException {
+        String query = "SELECT projName FROM project WHERE projLeader = ? AND projName = ?";
+        stmt = connect.prepareStatement(query);
+        stmt.setString(1, username);
+        stmt.setString(2, project_name);
+        ResultSet result = stmt.executeQuery();
+        if(result.next()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
     @Override
     public ArrayList displayAllProjects() throws RemoteException, SQLException {
         String displayAllProj = "SELECT projName FROM project";
@@ -322,7 +334,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
     }
     @Override
     public ArrayList displayProject(String usrname) throws RemoteException, SQLException {
-        String query = "SELECT projName FROM projects JOIN projectMem ON project.projID = projectMem.projID JOIN users ON user.username = projectMem.username WHERE users.username = ?";
+        String query = "SELECT projName FROM project JOIN projectMem ON project.projID = projectMem.projID JOIN users ON user.username = projectMem.username WHERE users.username = ?";
         stmt = connect.prepareStatement(query);
         stmt.setString(1, usrname);
         ResultSet result = stmt.executeQuery();
@@ -338,8 +350,12 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         String query = "SELECT projID FROM project WHERE projName = ?";
         stmt = connect.prepareStatement(query);
         stmt.setString(1, project);
-        ResultSet rs = stmt.executeQuery();
-        return rs.next() ? rs.getInt("proj_id") : -1;
+        ResultSet result = stmt.executeQuery();
+        if(result.next()) {
+            return result.getInt("projID");
+        } else {
+            return -1;
+        }
     }
     @Override
     public String addMember(String usrname, int project_id) throws RemoteException, SQLException {
@@ -388,7 +404,7 @@ public class AdminServer extends UnicastRemoteObject implements Project {
         ResultSet result = stmt.executeQuery();
         ArrayList<String> projects = new ArrayList<>();
         while(result.next()) {
-            String p = result.getString("project_name");
+            String p = result.getString("projName");
             projects.add(p);
         }
         return projects;
